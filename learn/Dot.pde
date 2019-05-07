@@ -6,7 +6,10 @@ class Dot implements Comparable
   PVector acc;
   Brain brain;
   boolean dead = false;
-  boolean reachedGoal = false;
+  boolean eaten = false;
+  boolean hitWall = false;
+  int reachedGoal = 0;
+  boolean safe = false;
   color col = color(0);
   int dotSize = 4;
   int colSize = (int)dotSize / 2;
@@ -20,7 +23,7 @@ class Dot implements Comparable
     brain = new Brain(species.brainSize);
     pos = new PVector(coords.x, coords.y);
     vel = new PVector(0, 0);
-    acc = vel;
+    acc = new PVector(0, 0);
   }
   
   int compareTo(Object o)
@@ -34,6 +37,11 @@ class Dot implements Comparable
   void show()
   {
     fill(col);
+    if (dead)
+    {
+      if (eaten) { fill(255, 0, 0); }
+      else { fill(0); }
+    }
     ellipse(pos.x, pos.y, dotSize, dotSize);
   }
   
@@ -49,28 +57,38 @@ class Dot implements Comparable
     }
     else
     {
+      if (inSafeZone(pos)) { safe = true; }
       dead = true;
     }
   }
 
   void update()
   {
-    if ((!dead) && (!reachedGoal))
+    if (!dead)
     {
       move();
-      if (pos.x < colSize || pos.y < colSize || pos.x > width - colSize || pos.y > height - colSize)
+      if (dist(pos.x, pos.y, goal.x, goal.y) < 6)
       {
-        col = color(0, 0, 0);
-        dead = true;
-      }
-      else if (dist(pos.x, pos.y, goal.x, goal.y) < 6)
-      {
-        col = color(0, 255, 0);
-        reachedGoal = true;
+        reachedGoal++;
       }
       for (int i=0;i<obstacles.length;i++)
       {
-        if (didCollide(obstacles[i])) { dead = true; break; }
+        if (didCollide(pos, colSize, obstacles[i]))
+        {
+          dead = true;
+          hitWall = true;
+          break;
+        }
+      }
+      for (int i=0;i<eaters.length;i++)
+      {
+        if (dist(pos.x, pos.y, eaters[i].pos.x, eaters[i].pos.y) < (dotSize / 2) + (eaters[i].dotSize / 2))
+        {
+          dead = true;
+          eaten = true;
+          eaters[i].eat(this);
+          break;
+        }
       }
     }
     else
@@ -81,21 +99,14 @@ class Dot implements Comparable
 
   void calculateFitness()
   {
-    if (reachedGoal) { fitness = 2.0 - ((float)brain.step / (float)species.brainSize); }
-    else
-    {
-      float dotDist = dist(pos.x, pos.y, goal.x, goal.y);
-      fitness = 1.0 - ((float)dotDist / (float)maxDist);
-    }
+    float dotDist = dist(pos.x, pos.y, goal.x, goal.y);
+    fitness = 1.0 - ((float)dotDist / (float)maxDist);
+    fitness += 1 * reachedGoal; 
+
+    if (safe) { fitness *= 1.5; }
+    else if (eaten) { fitness /= 3; }
+    else if (hitWall) { fitness /= 2; }
+    
   }
-  
-  boolean didCollide(Obstacle o)
-  {
-    if ((pos.x + colSize > o.position.x) && (pos.y + colSize > o.position.y)
-        && (pos.x - colSize < o.position.x + o.rwidth) && (pos.y - colSize < o.position.y + o.rheight))
-    {
-      return true;
-    }
-    return false;
-  }
+ 
 }

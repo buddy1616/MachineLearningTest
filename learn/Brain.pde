@@ -13,7 +13,7 @@ class Brain
   {
     for (int i=0;i<directions.length;i++)
     {
-      directions[i] = getRandomDirection();
+      directions[i] =  PVector.random2D();
     }
   }
   
@@ -24,14 +24,10 @@ class Brain
     {
       if (random(1) < mutationRate)
       {
-        directions[i] = getRandomDirection();
+        directions[i] = PVector.random2D();
       }
     }
   }
   
-  PVector getRandomDirection()
-  {
-    return PVector.fromAngle(random(2*PI));
-  }
-  
+
 }

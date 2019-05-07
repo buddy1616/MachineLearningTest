@@ -47,7 +47,10 @@ class Population
   {
     for (int i=0;i<this.dots.length;i++)
     {
-      this.dots[i].brain.mutate(this.species.mutationRate);
+      if (this.dots[i] != this.mostFit)
+      {
+        this.dots[i].brain.mutate(this.species.mutationRate);
+      }
     }
   }
 
@@ -55,7 +58,7 @@ class Population
   {
     for (int i=0;i<this.dots.length;i++)
     {
-      if ((!this.dots[i].dead) && (!this.dots[i].reachedGoal))
+      if (!this.dots[i].dead)
       {
         return false;
       }
@@ -74,7 +77,7 @@ class Population
       }
     }
     this.getBreedingPool();
-    this.species.averageFitness = this.totalFitness / this.popSize;
+    this.species.updateFitness(this.totalFitness / this.popSize);
     Dot[] newDots = new Dot[popSize];
     for (int i=0;i<newDots.length;i++)
     {
@@ -82,7 +85,6 @@ class Population
       newDots[i].brain.directions = this.selectParentDirections();
     }
     this.dots = newDots;
-    this.species.saveGenetics();
     this.generation++;
   }
 
@@ -100,6 +102,7 @@ class Population
       r.add(this.dots[i]);
       this.totalFitness += this.dots[i].fitness;
     }
+    r.add(new Dot(this.species, this.col, this.startingCoords));
     this.breedingPool = r.toArray(new Dot[size]);
   }
 
